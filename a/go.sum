@@ -1,3 +1,5 @@
+github.com/aabalke/gojit v0.0.0-20251118030816-ea8f0bc1b9e9 h1:4Epp0eAOm/nex4unIoK0ALFv7HyfSv6iJ85sXRNbOYQ=
+github.com/aabalke/gojit v0.0.0-20251118030816-ea8f0bc1b9e9/go.mod h1:vNHnmqSXYHwoLRpRrc4y/py2X1KY5UZPfwnnV2NZHx4=
 github.com/edsrzf/mmap-go v1.2.0 h1:hXLYlkbaPzt1SaQk+anYwKSRNhufIDCchSPkUD6dD84=
 github.com/edsrzf/mmap-go v1.2.0/go.mod h1:19H/e8pUPLicwkyNgOykDXkJ9F0MHE+Z52B8EIth78Q=
 github.com/nelhage/gojit v0.0.0-20151106164540-4098a5faeff1 h1:g8k01bQfce23B9ptpuX+kpLRU3r4rRsX9G2uSvt9rug=

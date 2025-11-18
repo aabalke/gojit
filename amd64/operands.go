@@ -10,7 +10,7 @@ type Operand interface {
 }
 
 type Imm64 struct {
-	Val int32
+	Val int64
 }
 
 func U64(u uint64) int64 {

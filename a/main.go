@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"unsafe"
 
-	"github.com/aabalke33/gojit"
-	"github.com/aabalke33/gojit/amd64"
+	"github.com/aabalke/gojit"
+	"github.com/aabalke/gojit/amd64"
 )
 
 // integer args and results (params and returns) use RAX, RBX, RCX, RDI, RSI, R8, R9, R10, R11, then stack
@@ -60,7 +60,7 @@ func main() {
     // why min 0x10???
     CallBlk(asm, 0x18, func() {
 
-        asm.Mov(amd64.ImmRm{Base: int32(ptr)}, amd64.Rax)
+        asm.Mov(amd64.Imm64{Val: int64(ptr)}, amd64.Rax)
         asm.Mov(amd64.Imm{Val: 0x69420}, amd64.Rbx)
         asm.Mov(amd64.Imm{Val: 0x7},     amd64.Rcx)
         //asm.CallFuncGo(add)
