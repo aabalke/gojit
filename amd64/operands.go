@@ -9,6 +9,22 @@ type Operand interface {
 	ModRM(asm *Assembler, reg Register)
 }
 
+type Imm64 struct {
+	Val int32
+}
+
+func U64(u uint64) int64 {
+	return int64(u)
+}
+
+func (i Imm64) isOperand() {}
+func (i Imm64) Rex(asm *Assembler, reg Register) {
+	panic("Imm.Rex")
+}
+func (i Imm64) ModRM(asm *Assembler, reg Register) {
+	panic("Imm.ModRM")
+}
+
 type Imm struct {
 	Val int32
 }
