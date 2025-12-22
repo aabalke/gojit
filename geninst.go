@@ -137,7 +137,7 @@ func (asm *Assembler) Arithmetic(insn *Instruction, src, dst Operand) {
 	case Imm:
 		imm_rm := insn.imm_rm
 		immbits := insn.bits
-		if insn.imm8_rm.op != nil && int32(int8(s.Val)) == s.Val {
+		if insn.imm8_rm.op != nil && int32(int8(s)) == int32(s) {
 			imm_rm = insn.imm8_rm
 			immbits = 8
 		}
@@ -152,9 +152,9 @@ func (asm *Assembler) Arithmetic(insn *Instruction, src, dst Operand) {
 			dst.ModRM(asm, Register{imm_rm.sub, 0})
 		}
 		if immbits == 8 {
-			asm.byte(byte(s.Val))
+			asm.byte(byte(s))
 		} else {
-			asm.int32(uint32(s.Val))
+			asm.int32(uint32(s))
 		}
 		return
 	case Register:
@@ -260,7 +260,7 @@ func (a *Assembler) CallRel(dst uintptr) {
 func (a *Assembler) Push(src Operand) {
 	if imm, ok := src.(Imm); ok {
 		a.byte(0x68)
-		a.int32(uint32(imm.Val))
+		a.int32(uint32(imm))
 	} else {
 		a.byte(0xff)
 		src.ModRM(a, Register{0x6, 64})

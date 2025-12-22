@@ -96,7 +96,7 @@ func TestIndirect(t *testing.T) {
         v = 0xBEEF
 	})
 
-	asm.Mov(Imm{0xDEAD}, Rax)
+	asm.Mov(Imm(0xDEAD), Rax)
 	asm.MovAbs(uint64(uintptr(unsafe.Pointer(&v))), Rbx)
 	asm.Mov(Rax, Indirect{Rbx, 0, 64})
 
@@ -127,13 +127,13 @@ func TestCallArguments(t *testing.T) {
 
     var o uint64
 
-    asm.Mov(Imm{1}, Rax)
-    asm.Mov(Imm{1}, Rbx)
-    asm.Mov(Imm{1}, Rcx)
-    asm.Mov(Imm{1}, Rdi)
-    asm.Mov(Imm{1}, Rsi)
-    asm.Mov(Imm{1}, R8)
-    asm.Mov(Imm{1}, R9)
+    asm.Mov(Imm(1), Rax)
+    asm.Mov(Imm(1), Rbx)
+    asm.Mov(Imm(1), Rcx)
+    asm.Mov(Imm(1), Rdi)
+    asm.Mov(Imm(1), Rsi)
+    asm.Mov(Imm(1), R8)
+    asm.Mov(Imm(1), R9)
 
 	asm.CallFunc(func(a, b, c, d, e, f, g uint64) uint64  {
         return a+b+c+d+e+f+g

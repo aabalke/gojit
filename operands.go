@@ -9,9 +9,7 @@ type Operand interface {
 	ModRM(asm *Assembler, reg Register)
 }
 
-type Imm struct {
-	Val int32
-}
+type Imm int32
 
 func U32(u uint32) int32 {
 	return int32(u)
