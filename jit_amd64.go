@@ -4,5 +4,6 @@ package gojit
 // should be an integer multiple of the page size.
 const PageSize = 4096
 
-func jitcall()
-func cgocall()
+// asm stubs
+func callJIT(code *byte)
+func callJITImplAddr() uintptr

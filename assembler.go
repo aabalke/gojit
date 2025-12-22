@@ -1,17 +1,8 @@
 // Package amd64 implements a simple amd64 assembler.
-package amd64
+package gojit
 
 import (
 	"errors"
-
-	"github.com/rasky/gojit"
-)
-
-type ABI int
-
-const (
-	CgoABI ABI = iota
-	GoABI
 )
 
 var ErrBufferTooSmall = errors.New("buffer is too small")
@@ -23,40 +14,20 @@ var ErrBufferTooSmall = errors.New("buffer is too small")
 type Assembler struct {
 	Buf []byte
 	Off int
-	ABI ABI
 
 	err error
 }
 
 func New(size int) (*Assembler, error) {
-	buf, e := gojit.Alloc(size)
+	buf, e := Alloc(size)
 	if e != nil {
 		return nil, e
 	}
 	return &Assembler{Buf: buf}, nil
 }
 
-func NewGoABI(size int) (*Assembler, error) {
-	buf, e := gojit.Alloc(size)
-	if e != nil {
-		return nil, e
-	}
-	return &Assembler{Buf: buf, ABI: GoABI}, nil
-}
-
 func (a *Assembler) Release() {
-	gojit.Release(a.Buf)
-}
-
-func (a *Assembler) BuildTo(out interface{}) {
-	switch a.ABI {
-	case CgoABI:
-		gojit.BuildToCgo(a.Buf, out)
-	case GoABI:
-		gojit.BuildTo(a.Buf, out)
-	default:
-		panic("bad ABI")
-	}
+	Release(a.Buf)
 }
 
 func (a *Assembler) Error() error {
@@ -119,7 +90,7 @@ func (a *Assembler) int64(i uint64) {
 }
 
 func (a *Assembler) rel32(addr uintptr) {
-	off := uintptr(addr) - gojit.Addr(a.Buf[a.Off:]) - 4
+	off := uintptr(addr) - Addr(a.Buf[a.Off:]) - 4
 	if uintptr(int32(off)) != off {
 		panic("call rel: target out of range")
 	}

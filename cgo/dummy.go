@@ -1,3 +1,0 @@
-package cgo
-
-import "C"

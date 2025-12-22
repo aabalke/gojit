@@ -1,18 +1,16 @@
 #include "funcdata.h"
 #include "textflag.h"
 
-// cgocall(*args) with jitcode in the context blob
-//   -> runtime·cgocall(jitcode, frame)
-TEXT ·cgocall(SB),NOSPLIT,$16
-        NO_LOCAL_POINTERS
-        LEAQ argframe+0(FP), AX
-        MOVQ AX, 8(SP)
-        MOVQ 8(DX), AX
-        MOVQ AX, 0(SP)
-        CALL runtime·cgocall(SB)
-        RET
+TEXT ·callJIT(SB), 0, $8-8
+    NO_LOCAL_POINTERS
+    MOVQ code+0(FP), AX
+    JMP AX
+gocall:
+    CALL R10
+    JMP (SP)
 
-TEXT ·jitcall(SB),NOSPLIT,$0
-        LEAQ argframe+0(FP), DI
-        MOVQ 8(DX), AX
-        JMP AX
+TEXT ·callJITImplAddr(SB), 0, $0-8
+    NO_LOCAL_POINTERS
+    MOVQ $·callJIT(SB), AX  // address of ABI0 impl, not trampoline
+    MOVQ AX, ret+0(FP)
+    RET

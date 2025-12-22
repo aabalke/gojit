@@ -1,43 +1,17 @@
-# `gojit` -- pure-golang runtime code-generation
+# gojit
 
-This is the result of my spending the hack day at
-[Gophercon 2014](http://gophercon.com) playing with doing JIT from
-golang code. This repository contains several packages:
+This is a major update to nelhage/gojit - fixing major problems and updating to
+modern ABI interactions. It is build for just x86 (amd64) instructions at this time.
 
-- `gojit`
+The biggest change is proper "jit -> go" func handling. Originally, stack checks
+were not handled properly and crashes would occur when gc or stack growth occured.
 
-   Contains the basic JIT support -- allocate executable chunks of
-   memory, and convert them into callable golang functions.
+[Read here for more details.](https://aaronbalke.com/posts/calling-go-functions-from-jit-code/)
 
-- `amd64`
+This jit works in golang version 1.17+. The proper handling of jit -> go funcs should
+continue to work as long as the abi interaction has not major updates.
 
-   Contains a simplistic amd64 assembler designed for use with `gojit`
+For handling in golang version 1.16 and earlier please [read](https://www.quasilyte.dev/blog/post/call-go-from-jit/).
 
-- `bf`
-
-   Contains a just-in-time compiler for
-   [Brainfuck](http://esolangs.org/wiki/Brainfuck) that demos the
-   above packages
-
-- `gobf`
-
-   Contains a binary that provides a command-line interface to `bf`
-
-
-## Using
-
-`gobf` can be fetched using
-
-    go get github.com/nelhage/gojit/gobf
-
-And then run as `gobf file.bf`. For some built-in examples:
-
-    $ gobf $GOPATH/src/github.com/nelhage/gojit/bf/test/hello.bf
-    Hello World!
-    $ gobf $GOPATH/src/github.com/nelhage/gojit/bf/test/hello.bf | gobf $GOPATH/src/github.com/nelhage/gojit/bf/test/rot13.bf
-    Uryyb Jbeyq!
-
-## Portability
-
-This code has been tested on `darwin/amd64` and `linux/amd64`. It is
-extremely unlikely to work anywhere else.
+Other changes include the removal of bf, and cgo and a simpler build process.
+Some intructions have been added based on rasky/gojit.

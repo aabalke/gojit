@@ -1,4 +1,4 @@
-package amd64
+package gojit
 
 type Operand interface {
 	// isOperand is unexported prevents external packages from

@@ -1,4 +1,4 @@
-package amd64
+package gojit
 
 type ImmRm struct {
 	op  []byte

@@ -1,4 +1,4 @@
-package amd64
+package gojit
 
 import (
 	"fmt"
@@ -314,6 +314,17 @@ func (a *Assembler) JccShortForward(cc byte) func() {
 func (a *Assembler) JmpForward() func() {
 	a.byte(0xe9)
 	return a.fwdOffset()
+}
+
+func (a *Assembler) Jmp(src Operand) {
+	if _, ok := src.(Imm); ok {
+        panic("unsetup jmp imm")
+		//a.byte(0x68)
+		//a.int32(uint32(imm.Val))
+	} else {
+		a.byte(0xff)
+		src.ModRM(a, Register{0x5, 64})
+	}
 }
 
 func (a *Assembler) JccForward(cc byte) func() {

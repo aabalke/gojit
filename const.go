@@ -1,4 +1,4 @@
-package amd64
+package gojit
 
 const (
 	PREFIX_LOCK     = 0xF0
