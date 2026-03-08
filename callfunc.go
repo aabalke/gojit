@@ -13,7 +13,7 @@ import (
 
 var callPtr = getCallAddr()
 
-func (a *Assembler) CallFunc(f any) {
+func (a *Assembler) InternalCallFunc(f any) {
 
     // uses R10, R11 to give max cnt arg / result registers
     // see abi internal for amd64 registers

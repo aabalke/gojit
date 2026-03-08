@@ -234,6 +234,8 @@ func (a *Assembler) Btr(src, dst Operand) { a.Arithmetic(InstBtr, src, dst) }
 func (a *Assembler) Bsr(src, dst Operand) { a.Arithmetic(InstBsr, src, dst) }
 func (a *Assembler) Bsf(src, dst Operand) { a.Arithmetic(InstBsf, src, dst) }
 
+func (a *Assembler) Lzcnt(src, dst Operand) { a.Arithmetic(InstLzcnt, src, dst) }
+
 func (a *Assembler) Int3()  { a.byte(0xcc) }
 func (a *Assembler) Ret()   { a.byte(0xc3) }
 func (a *Assembler) Pushf() { a.byte(0x9c) }
@@ -343,14 +345,14 @@ func (a *Assembler) fwdOffset() func() {
 		}
 		end := a.Off
 		i := end - base
-		a.Buf[off] = byte(i & 0xFF)
+		a.Buf[off]   = byte(i)
 		a.Buf[off+1] = byte(i >> 8)
 		a.Buf[off+2] = byte(i >> 16)
 		a.Buf[off+3] = byte(i >> 24)
 	}
 }
 
-func (a *Assembler) Setcc(cc byte, dst Operand) {
+func (a *Assembler) SETcc(cc byte, dst Operand) {
 	switch d := dst.(type) {
 	case Register:
 		a.rex(false, false, false, d.Val > 7)
@@ -379,3 +381,75 @@ func (a *Assembler) JccRel(cc byte, dst uintptr) {
 	a.byte(0x80 | cc)
 	a.rel32(dst)
 }
+
+// movsx / movsxd
+
+func (a *Assembler) Movsx(src, dst Operand)  { a.movsx(src, dst, false) }
+func (a *Assembler) Movsxd(src, dst Operand) { a.movsx(src, dst, true) }
+
+func (asm *Assembler) movsx(src, dst Operand, isSXD bool) {
+	dr, ok := dst.(Register)
+	if !ok {
+		panic("MOVSX/MOVSXD: dst must be register")
+	}
+
+	switch s := src.(type) {
+	case Register:
+		// MOVSXD r64, r32
+		if isSXD {
+			if dr.Bits != 64 || s.Bits != 32 {
+				panic("MOVSXD requires r64 <- r32")
+			}
+			asm.rex(true, dr.Val > 7, false, s.Val > 7)
+			asm.byte(0x63)
+			asm.modrm(MOD_REG, dr.Val&7, s.Val&7)
+			return
+		}
+
+		// MOVSX r{16,32,64}, r{8,16}
+		var opcode byte
+		switch s.Bits {
+		case 8:
+			opcode = 0xBE
+		case 16:
+			opcode = 0xBF
+		default:
+			panic("MOVSX: invalid source size")
+		}
+
+		asm.rex(dr.Bits == 64, dr.Val > 7, false, s.Val > 7)
+		asm.byte(0x0F)
+		asm.byte(opcode)
+		asm.modrm(MOD_REG, dr.Val&7, s.Val&7)
+		return
+
+	default:
+		// r/m form
+		if isSXD {
+			if dr.Bits != 64 {
+				panic("MOVSXD requires r64 destination")
+			}
+			src.Rex(asm, dr)
+			asm.byte(0x63)
+			src.ModRM(asm, dr)
+			return
+		}
+
+		// MOVSX r, r/m8 or r/m16
+		var opcode byte
+		switch src.(interface{ Bits() int }).Bits() {
+		case 8:
+			opcode = 0xBE
+		case 16:
+			opcode = 0xBF
+		default:
+			panic("MOVSX: invalid memory size")
+		}
+
+		src.Rex(asm, dr)
+		asm.byte(0x0F)
+		asm.byte(opcode)
+		src.ModRM(asm, dr)
+	}
+}
+

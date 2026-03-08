@@ -1,4 +1,4 @@
-# gojit
+# aabalke/gojit: Jit Compiler for Golang
 
 This is a major update to nelhage/gojit - fixing major problems and updating to
 modern ABI interactions. It is build for just x86 (amd64) instructions at this time.
@@ -15,3 +15,13 @@ For handling in golang version 1.16 and earlier please [read](https://www.quasil
 
 Other changes include the removal of bf, and cgo and a simpler build process.
 Some intructions have been added based on rasky/gojit.
+
+# Notes
+
+SETcc does not work on Rdi becayse ModRM uses & 7. Is this proper?
+Should it be fixed to handle all registers?
+
+
+# Problems
+- Adv Func calls Clobbers all registers and stack.
+- Nosplit required on called functions, not sure why

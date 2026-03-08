@@ -29,3 +29,7 @@ func Release(b []byte) error {
 func Addr(b []byte) uintptr {
     return uintptr(unsafe.Pointer(unsafe.SliceData(b)))
 }
+
+func CallJit(b uintptr) {
+    callJIT(b)
+}

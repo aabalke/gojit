@@ -1,12 +1,25 @@
 package gojit
 
 import (
-	"runtime"
-	"testing"
-	"unsafe"
+    "runtime"
+    "testing"
+    "unsafe"
 )
 
 // note: variables called within go funcs have to be global
+
+func testExit(asm *Assembler) {
+
+    ExitAssembler(asm)
+
+    if asm.err != nil {
+        panic(asm.err)
+    }
+
+	callJIT(uintptr(unsafe.Pointer(&asm.Buf[0])))
+
+	asm.Release()
+}
 
 var called = false
 
@@ -20,15 +33,11 @@ func TestCall(t *testing.T) {
 		panic(err)
 	}
 
-	asm.CallFunc(func() {
+	asm.InternalCallFunc(func() {
         called = true
 	})
 
-    exit(asm)
-
-	callJIT(&asm.Buf[0])
-
-	asm.Release()
+    testExit(asm)
 
     if !called {
         t.Errorf("Failed Test Call: called variable not set\n")
@@ -52,13 +61,9 @@ func TestCallRecursion(t *testing.T) {
 		panic(err)
 	}
 
-	asm.CallFunc(recursive)
+	asm.InternalCallFunc(recursive)
 
-    exit(asm)
-
-	callJIT(&asm.Buf[0])
-
-	asm.Release()
+    testExit(asm)
 }
 
 func TestCallGc(t *testing.T) {
@@ -70,15 +75,11 @@ func TestCallGc(t *testing.T) {
 		panic(err)
 	}
 
-	asm.CallFunc(func ()  {
+	asm.InternalCallFunc(func ()  {
         runtime.GC()
 	})
 
-    exit(asm)
-
-	callJIT(&asm.Buf[0])
-
-	asm.Release()
+    testExit(asm)
 }
 
 var v uint64
@@ -92,7 +93,7 @@ func TestIndirect(t *testing.T) {
 		panic(err)
 	}
 
-	asm.CallFunc(func ()  {
+	asm.InternalCallFunc(func ()  {
         v = 0xBEEF
 	})
 
@@ -100,15 +101,11 @@ func TestIndirect(t *testing.T) {
 	asm.MovAbs(uint64(uintptr(unsafe.Pointer(&v))), Rbx)
 	asm.Mov(Rax, Indirect{Rbx, 0, 64})
 
-	asm.CallFunc(func ()  {
+	asm.InternalCallFunc(func ()  {
         v = 0xABBA
 	})
 
-    exit(asm)
-
-	callJIT(&asm.Buf[0])
-
-	asm.Release()
+    testExit(asm)
 
     if v != 0xABBA {
         t.Errorf("Failed Test Call: v variable not set to 0xABBA\n")
@@ -135,23 +132,19 @@ func TestCallArguments(t *testing.T) {
     asm.Mov(Imm(1), R8)
     asm.Mov(Imm(1), R9)
 
-	asm.CallFunc(func(a, b, c, d, e, f, g uint64) uint64  {
+	asm.InternalCallFunc(func(a, b, c, d, e, f, g uint64) uint64  {
         return a+b+c+d+e+f+g
 	})
 
     asm.MovAbs(uint64(uintptr(unsafe.Pointer(&o))), Rbx)
     asm.Mov(Rax, Indirect{Rbx, 0, 64})
-    exit(asm)
 
-	callJIT(&asm.Buf[0])
-
-	asm.Release()
+    testExit(asm)
 
     if o != 7 {
         t.Errorf("Failed Test Call Arguments: o variable not set to 0x7. Value: %X\n", o)
     }
 }
-
 
 func TestCallResults(t *testing.T) {
 
@@ -162,7 +155,7 @@ func TestCallResults(t *testing.T) {
 		panic(err)
 	}
 
-	asm.CallFunc(func() (
+	asm.InternalCallFunc(func() (
         uint64, uint64, uint64, uint64,
         uint64, uint64, uint64, uint64)  {
         return 1, 2, 3, 4, 5, 6, 7, 8
@@ -186,12 +179,7 @@ func TestCallResults(t *testing.T) {
     asm.MovAbs(uint64(uintptr(unsafe.Pointer(&th))), R11)
     asm.Mov(R10, Indirect{R11, 0, 64})
 
-
-    exit(asm)
-
-	callJIT(&asm.Buf[0])
-
-	asm.Release()
+    testExit(asm)
 
     if (
         ta != 1 ||
@@ -204,4 +192,107 @@ func TestCallResults(t *testing.T) {
         th != 8) {
         t.Error("BAD")
     }
+}
+
+//func TestStress(t *testing.T) {
+//
+//    // this initially would be fine to run 1 << 6 times but not 1 << 7. 
+//    // not sure why
+//
+//    println("starting stress test")
+//
+//	asm, err := New(1024 * 0x30)
+//	if err != nil {
+//		panic(err)
+//	}
+//
+//    f := func ()  {
+//        runtime.GC()
+//    }
+//
+//    for range 1024 {
+//        asm.InternalCallFunc(f)
+//    }
+//
+//    testExit(asm)
+//}
+
+
+var (
+    CpuPointer *Cpu
+    CPU = R9
+)
+
+type Cpu struct {
+    mem *Mem
+}
+
+type Mem struct {
+}
+
+func (m *Mem) Read(addr uint32, arm9 bool) uint8 {
+    
+	if arm9 {
+
+
+		switch addr >> 24 {
+        case 0x8, 0x9, 0xA:
+            return 0
+            return m.ReadGbaSlot(addr, arm9)
+		}
+	}
+
+    panic("BAD")
+}
+
+func (m *Mem) ReadGbaSlot(addr uint32, arm9 bool) uint8 {
+
+    if arm9 {
+        return 0
+    }
+
+    panic("BAD")
+}
+
+
+func (m *Mem) Read8(addr uint32, arm9 bool) uint32 {
+    return uint32(m.Read(addr, arm9))
+}
+
+
+func CallFunc(asm *Assembler, f any) {
+    asm.MovAbs(uint64(uintptr(unsafe.Pointer(CpuPointer))), CPU)
+    asm.InternalCallFunc(f)
+    asm.MovAbs(uint64(uintptr(unsafe.Pointer(CpuPointer))), CPU)
+}
+
+//go:nosplit
+func Read(addr uint32) uint32 {
+    return CpuPointer.mem.Read8(addr, true)
+}
+
+func TestSpecific(t *testing.T) {
+
+    cpu := &Cpu{
+        mem: &Mem{},
+    }
+
+    CpuPointer = cpu
+
+    println("starting stress test specific")
+
+    for range 0x100_0000 {
+
+        asm, err := New(1024)
+        if err != nil {
+            panic(err)
+        }
+
+        asm.Mov(Imm(0x800_0000), Rax)
+        CallFunc(asm, Read)
+
+        testExit(asm)
+    }
+
+
 }

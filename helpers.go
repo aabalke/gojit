@@ -2,7 +2,7 @@ package gojit
 
 // these functions are useful for auto setting up framesizes for call jit
 
-func exit(asm *Assembler) {
+func ExitAssembler(asm *Assembler) {
 
     // framesize of 16 is used since "TEXT ·callJIT(SB), 0, $8-8"
 

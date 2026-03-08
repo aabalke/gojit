@@ -5,5 +5,5 @@ package gojit
 const PageSize = 4096
 
 // asm stubs
-func callJIT(code *byte)
+func callJIT(code uintptr)
 func callJITImplAddr() uintptr

@@ -20,9 +20,10 @@ type Assembler struct {
 
 func New(size int) (*Assembler, error) {
 	buf, e := Alloc(size)
-	if e != nil {
+	if e != nil || len(buf) == 0{
 		return nil, e
 	}
+
 	return &Assembler{Buf: buf}, nil
 }
 

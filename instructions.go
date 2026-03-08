@@ -81,4 +81,6 @@ var (
 
 	InstBsr = &Instruction{"bsr", nil, ImmRm{}, ImmRm{}, nil, j{0x0F, 0xBD}, 64}
 	InstBsf = &Instruction{"bsf", nil, ImmRm{}, ImmRm{}, nil, j{0x0F, 0xBC}, 64}
+
+    InstLzcnt = &Instruction{"lzcnt", nil, ImmRm{}, ImmRm{}, nil, j{0xF3, 0x0F, 0xBD}, 64}
 )

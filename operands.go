@@ -39,15 +39,19 @@ func (r Register) ModRM(asm *Assembler, reg Register) {
 
 var (
 	Al  = Register{0, 8}
+	Ax  = Register{0, 16}
 	Eax = Register{0, 32}
 	Rax = Register{0, 64}
 	Cl  = Register{1, 8}
+	Cx  = Register{1, 16}
 	Ecx = Register{1, 32}
 	Rcx = Register{1, 64}
 	Dl  = Register{2, 8}
+	Dx  = Register{2, 16}
 	Edx = Register{2, 32}
 	Rdx = Register{2, 64}
 	Bl  = Register{3, 8}
+	Bx  = Register{3, 16}
 	Ebx = Register{3, 32}
 	Rbx = Register{3, 64}
 	Esp = Register{4, 32}
@@ -56,6 +60,7 @@ var (
 	Rbp = Register{5, 64}
 	Esi = Register{6, 32}
 	Rsi = Register{6, 64}
+    Di  = Register{7, 8}
 	Edi = Register{7, 32}
 	Rdi = Register{7, 64}
 
