@@ -4,6 +4,7 @@ aabalke/gojit is a revival of nelhage/gojit and rasky/gojit, providing jit compi
 
 # Resources
 [Writeup](https://aaronbalke.com/posts/gojit/)
+
 [Video](https://youtu.be/7fGyjb-6mYA)
 
 # Requirements
@@ -11,7 +12,7 @@ aabalke/gojit is a revival of nelhage/gojit and rasky/gojit, providing jit compi
 This jit compiler requires an x86/amd64 system, and go version 1.17+.
 For handling in golang version 1.16 and earlier please [read](https://www.quasilyte.dev/blog/post/call-go-from-jit/).
 
-If Go function is called from jit code, the Go functions must have a nosplit directive.
+If a Go function is called from jit code, the Go functions must have a nosplit directive.
 If the JIT mutates variables though pointers, those variables must be heap allocated, and/or global.
 
 # Examples
