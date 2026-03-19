@@ -45,6 +45,8 @@ func TestCall(t *testing.T) {
 }
 
 var i = 1 << 16
+
+//go:nosplit
 func recursive() {
     if i > 0 {
         i--
