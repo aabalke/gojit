@@ -1,3 +1,5 @@
+//go:build amd64
+
 package gojit
 
 // PageSize is the size of a memory page. The len argument to Alloc

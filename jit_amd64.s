@@ -1,3 +1,5 @@
+//go:build amd64
+
 #include "funcdata.h"
 #include "textflag.h"
 
