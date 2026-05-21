@@ -1,4 +1,3 @@
-// Package amd64 implements a simple amd64 assembler.
 package arm64
 
 import (

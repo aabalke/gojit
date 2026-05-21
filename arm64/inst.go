@@ -1,5 +1,9 @@
 package arm64
 
+import (
+	"encoding/binary"
+)
+
 func (a *Assembler) Cinc(rd, rn Reg, cond Cond, sf bool) {
 
 	if rn == 0x1F {
@@ -13,10 +17,34 @@ func (a *Assembler) Cset(rd Reg, cond Cond, sf bool) {
 	a.Csinc(rd, 0x1F, 0x1F, cond ^ 1, sf)
 }
 
+func (a *Assembler) Csel(rd, rn, rm Reg, cond Cond, sf bool) {
+	a._condSelect(rd, rn, rm, cond, false, false, sf)
+}
+
 func (a *Assembler) Csinc(rd, rn, rm Reg, cond Cond, sf bool) {
+	a._condSelect(rd, rn, rm, cond, false, true, sf)
+}
+
+func (a *Assembler) Csinv(rd, rn, rm Reg, cond Cond, sf bool) {
+	a._condSelect(rd, rn, rm, cond, true, false, sf)
+}
+
+func (a *Assembler) Csneg(rd, rn, rm Reg, cond Cond, sf bool) {
+	a._condSelect(rd, rn, rm, cond, true, true, sf)
+}
+
+func (a *Assembler) _condSelect(rd, rn, rm Reg, cond Cond, op, op2, sf bool) {
 
 	v := uint32(0b00011010100) << 21
-	v |= 1 << 10
+
+	if op2 {
+		v |= 1 << 10
+	}
+
+	if op {
+		v |= 1 << 30
+	}
+
 	v |= uint32(rm)   << 16
 	v |= uint32(cond) << 12
 	v |= uint32(rn)   << 5
@@ -134,6 +162,13 @@ func (a *Assembler) EonReg(rd, rn, rm Reg, imm, shift uint32, sf bool) {
 	a._LogicalReg(rd, rn, rm, imm, 0b10, shift, true, sf)
 }
 
+const (
+	SHIFT_LSL = iota
+	SHIFT_LSR
+	SHIFT_ASR
+	SHIFT_ROR
+)
+
 func (a *Assembler) _LogicalReg(rd, rn, rm Reg, imm, opc, shift uint32, n, sf bool) {
 
 	if shift >= 0b100 {
@@ -167,6 +202,60 @@ func (a *Assembler) _LogicalReg(rd, rn, rm Reg, imm, opc, shift uint32, n, sf bo
 	v |= uint32(rd)
 
 	a.addInst(v)
+}
+
+func (a *Assembler) TstImm(rd Reg, imm Immediate, sf bool) {
+	a.AndImm(rd, rd, imm, true, sf)
+}
+
+func (a *Assembler) AndImm(rd, rn Reg, imm Immediate, set, sf bool) {
+	if set {
+		a._LogicalImm(rd, rn, imm, 0b11, sf)
+	}
+
+	a._LogicalImm(rd, rn, imm, 0b00, sf)
+}
+
+func (a *Assembler) OrrImm(rd, rn Reg, imm Immediate, sf bool) {
+	a._LogicalImm(rd, rn, imm, 0b01, sf)
+}
+
+func (a *Assembler) EorImm(rd, rn Reg, imm Immediate, sf bool) {
+	a._LogicalImm(rd, rn, imm, 0b10, sf)
+}
+
+func (a *Assembler) _LogicalImm(rd, rn Reg, imm Immediate, op uint32, sf bool) {
+
+	if op >= 1 << 2 {
+		panic("logical imm with op >= 1 << 2")
+	}
+
+	v := uint32(0b100100) << 23
+
+	if sf {
+		v |= 1 << 31
+	}
+
+	v |= op    << 29
+	v |= imm.n << 22
+	v |= imm.immr << 16
+	v |= imm.imms << 10
+	v |= uint32(rn) << 5
+	v |= uint32(rd)
+
+	a.addInst(v)
+}
+
+func (a *Assembler) NegReg(rd, rm Reg, imm, shift uint32, set, sh, sf bool) {
+	a.SUBReg(rd, RZR, rm, imm, shift, set, sh, sf)
+}
+
+func (a *Assembler) CmnReg(rn, rm Reg, imm, shift uint32, sh, sf bool) {
+	a.ADDReg(RZR, rn, rm, imm, shift, true, sh, sf)
+}
+
+func (a *Assembler) CmpReg(rn, rm Reg, imm, shift uint32, sh, sf bool) {
+	a.SUBReg(RZR, rn, rm, imm, shift, true, sh, sf)
 }
 
 func (a *Assembler) ADDReg(rd, rn, rm Reg, imm, shift uint32, set, sh, sf bool) {
@@ -207,6 +296,14 @@ func (a *Assembler) _ADDSUBReg(rd, rn, rm Reg, imm, shift uint32, set, sub, sf b
 	v |= uint32(rd)
 
 	a.addInst(v)
+}
+
+func (a *Assembler) CmnImm(rn Reg, imm, shift uint32, sh, sf bool) {
+	a.ADDImm(RZR, rn, imm, true, sh, sf)
+}
+
+func (a *Assembler) CmpImm(rn Reg, imm, shift uint32, sh, sf bool) {
+	a.SUBImm(RZR, rn, imm, true, sh, sf)
 }
 
 func (a *Assembler) ADDImm(rd, rn Reg, imm uint32, set, sh, sf bool) {
@@ -391,7 +488,7 @@ func (a *Assembler) Ret() {
 
 func (a *Assembler) Sxtb(rd, rn Reg, sf bool) {
 
-	i := Immediate{0, 0x7, 0x0}
+	i := Immediate{0, 0x7, 0x0, sf}
 
 	if sf { i.n = 1 }
 
@@ -400,7 +497,7 @@ func (a *Assembler) Sxtb(rd, rn Reg, sf bool) {
 
 func (a *Assembler) Sxth(rd, rn Reg, sf bool) {
 
-	i := Immediate{0, 0xF, 0x0}
+	i := Immediate{0, 0xF, 0x0, sf}
 
 	if sf { i.n = 1 }
 
@@ -408,7 +505,7 @@ func (a *Assembler) Sxth(rd, rn Reg, sf bool) {
 }
 
 func (a *Assembler) Sxtw(rd, rn Reg) {
-	a.Bfm(rd, rn, Immediate{1, 0x1F, 0x0}, false, true)
+	a.Bfm(rd, rn, Immediate{1, 0x1F, 0x0, true}, false, true)
 }
 
 func (a *Assembler) AsrImm(rd, rn Reg, shift uint32, sf bool) {
@@ -428,7 +525,7 @@ func (a *Assembler) AsrImm(rd, rn Reg, shift uint32, sf bool) {
         panic("invalid ASR shift")
     }
 
-	a.Bfm(rd, rn, Immediate{N, imms, shift}, false, sf)
+	a.Bfm(rd, rn, Immediate{N, imms, shift, sf}, false, sf)
 }
 
 func (a *Assembler) LsrImm(rd, rn Reg, shift uint32, sf bool) {
@@ -448,7 +545,7 @@ func (a *Assembler) LsrImm(rd, rn Reg, shift uint32, sf bool) {
 
     immr := shift
     imms := width - 1
-	a.Bfm(rd, rn, Immediate{N, imms, immr}, true, sf)
+	a.Bfm(rd, rn, Immediate{N, imms, immr, sf}, true, sf)
 }
 
 func (a *Assembler) LslImm(rd, rn Reg, shift uint32, sf bool) {
@@ -464,7 +561,7 @@ func (a *Assembler) LslImm(rd, rn Reg, shift uint32, sf bool) {
 	immr := (width - shift) % width
 	imms := (width - 1) - shift
 
-	a.Bfm(rd, rn, Immediate{N, imms, immr}, true, sf)
+	a.Bfm(rd, rn, Immediate{N, imms, immr, sf}, true, sf)
 }
 
 func (a *Assembler) Bfm(rd, rn Reg, imm Immediate, unsigned, sf bool) {
@@ -523,27 +620,190 @@ func (a *Assembler) Bfi(rd, rn Reg, width, lsb uint32, sf bool) {
 	a.addInst(v)
 }
 
+func (a *Assembler) MovReg(rd, rm Reg, sf bool) {
 
-func (a *Assembler) CmpReg(rn, rm Reg, imm, shift uint32, sf bool) {
-
-	if imm >= 1 << 6 {
-		panic("cmp reg imm >= 1 << 6")
-	}
-
-	if shift >= 1 << 2 {
-		panic("cmp reg shift >= 1 << 2")
-	}
-
-	v := uint32(0b01101011) << 24
-	v |= 0x1F
-	v |= uint32(rn) << 5
-	v |= imm << 10
+	v := uint32(0b10101) << 25
+	v |= 0x1F << 5
+	v |= uint32(rd)
 	v |= uint32(rm) << 16
-	v |= shift << 22
 
 	if sf {
 		v |= 1 << 31
 	}
 
+	a.addInst(v)
+}
+
+
+func (a *Assembler) RorImm(rd, rs Reg, shift uint32, sf bool) {
+	if shift >= 1 << 5 {
+		panic("ror imm with shift >= 1 << 5")
+	}
+	a.ExtrReg(rd, rs, rs, shift, sf)
+}
+
+func (a *Assembler) ExtrReg(rd, rn, rm Reg, imm uint32, sf bool) {
+
+	if imm >= 1 << 6 {
+		panic("extr reg imm >= 1 << 6")
+	}
+
+	v := uint32(0b100111) << 23
+
+	if sf {
+		v |= 1 << 31
+		v |= 1 << 22
+	}
+
+	v |= uint32(rd)
+	v |= uint32(rn) << 5
+	v |= uint32(rm) << 16
+	v |= imm << 10
+
+	a.addInst(v)
+}
+
+
+
+const (
+	UDIV = 0b000010
+	SDIV = 0b000011
+	LSLV = 0b001000
+	LSRV = 0b001001
+	ASRV = 0b001010
+	RORV = 0b001011
+	SMAX = 0b011000
+	UMAX = 0b011001
+	SMIN = 0b011010
+	UMIN = 0b011011
+)
+
+func (a *Assembler) UdivReg(rd, rn, rm Reg, sf bool) {
+	a._dataProcessSrc2(rd, rn, rm, UDIV, sf)
+}
+
+func (a *Assembler) SdivReg(rd, rn, rm Reg, sf bool) {
+	a._dataProcessSrc2(rd, rn, rm, SDIV, sf)
+}
+
+func (a *Assembler) LslReg(rd, rn, rm Reg, sf bool) {
+	a._dataProcessSrc2(rd, rn, rm, LSLV, sf)
+}
+
+func (a *Assembler) LsrReg(rd, rn, rm Reg, sf bool) {
+	a._dataProcessSrc2(rd, rn, rm, LSRV, sf)
+}
+
+func (a *Assembler) AsrReg(rd, rn, rm Reg, sf bool) {
+	a._dataProcessSrc2(rd, rn, rm, ASRV, sf)
+}
+
+func (a *Assembler) RorReg(rd, rn, rm Reg, sf bool) {
+	a._dataProcessSrc2(rd, rn, rm, RORV, sf)
+}
+
+func (a *Assembler) SmaxReg(rd, rn, rm Reg, sf bool) {
+	a._dataProcessSrc2(rd, rn, rm, SMAX, sf)
+}
+
+func (a *Assembler) UmaxReg(rd, rn, rm Reg, sf bool) {
+	a._dataProcessSrc2(rd, rn, rm, SMIN, sf)
+}
+
+func (a *Assembler) SminReg(rd, rn, rm Reg, sf bool) {
+	a._dataProcessSrc2(rd, rn, rm, UMAX, sf)
+}
+
+func (a *Assembler) UminReg(rd, rn, rm Reg, sf bool) {
+	a._dataProcessSrc2(rd, rn, rm, UMIN, sf)
+}
+
+func (a *Assembler) _dataProcessSrc2(rd, rn, rm Reg, op uint32, sf bool) {
+
+	v := uint32(0b1101011) << 22
+	v |= op << 10
+	v |= uint32(rd)
+	v |= uint32(rn) << 5
+	v |= uint32(rm) << 16
+
+	if sf {
+		v |= 1 << 31
+	}
+
+	a.addInst(v)
+}
+
+func (a *Assembler) AdcReg(rd, rn, rm Reg, set, sf bool) {
+	a._ADDSUBCARRY(rd, rn, rm, false, set, sf)
+}
+
+func (a *Assembler) SbcReg(rd, rn, rm Reg, set, sf bool) {
+	a._ADDSUBCARRY(rd, rn, rm, true, set, sf)
+}
+
+func (a *Assembler) _ADDSUBCARRY(rd, rn, rm Reg, sub, set, sf bool) {
+
+	v := uint32(0b1101)  << 25
+
+	if sf {
+		v |= 1<<31
+	}
+
+	if sub {
+		v |= 1<<30
+	}
+
+	if set {
+		v |= 1<<29
+	}
+
+	v |= uint32(rd)
+	v |= uint32(rn) << 5
+	v |= uint32(rm) << 16
+
+	a.addInst(v)
+}
+
+//// move sys reg => general purpose reg
+func (a *Assembler) Mrs(rt Reg) {
+	v := uint32(0xd51b4200)
+	v |= 1 << 21
+	v |= uint32(rt)
+	a.addInst(v)
+}
+
+// move general purpose reg => sys reg
+func (a *Assembler) Msr(rt Reg) {
+	v := uint32(0xd51b4200)
+	v |= uint32(rt)
+	a.addInst(v)
+}
+
+
+func (a *Assembler) B() func() {
+
+	branchOff := a.Off
+	a.addInst(0xDEADBEEF) // temporary, will crash if func not called
+
+	return func() {
+		immBytes := (a.Off - branchOff) >> 2
+		v := uint32(0b101) << 26 | uint32(immBytes)
+		binary.LittleEndian.PutUint32(a.Buf[branchOff:], v)
+	}
+}
+
+func (a *Assembler) BCond(cond Cond) func() {
+
+	branchOff := a.Off
+	a.addInst(0xDEADBEEF) // temporary, will crash if func not called
+
+	return func() {
+		immBytes := ((a.Off - branchOff) >> 2) << 5
+		v := uint32(0b010101) << 26 | uint32(immBytes) | uint32(cond)
+		binary.LittleEndian.PutUint32(a.Buf[branchOff:], v)
+	}
+}
+
+func (a *Assembler) Custom(v uint32) {
 	a.addInst(v)
 }

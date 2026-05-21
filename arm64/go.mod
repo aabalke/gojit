@@ -1,4 +1,4 @@
-module arm64
+module github.com/aabalke/gojit/arm64
 
 go 1.26.2
 
