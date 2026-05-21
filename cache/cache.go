@@ -1,5 +1,7 @@
 package cache
 
+// arm requires explicit instruction cache clearing
+
 //#include <stdint.h>
 //
 //static void clearcache(void* start, void* end) {

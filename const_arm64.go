@@ -1,4 +1,4 @@
-package arm64
+package gojit
 
 type Reg uint32
 

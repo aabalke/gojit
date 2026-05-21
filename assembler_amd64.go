@@ -1,40 +1,29 @@
-// Package amd64 implements a simple amd64 assembler.
 package gojit
 
-import (
-	"errors"
-)
+// PageSize is the size of a memory page. The len argument to Alloc
+// should be an integer multiple of the page size.
+const PageSize = 4096
 
-var ErrBufferTooSmall = errors.New("buffer is too small")
+// asm stubs
+func callJIT(code uintptr)
+func callJITImplAddr() uintptr
 
-// Assembler implements a simple amd64 assembler. All methods on
-// Assembler will emit code to Buf[Off:] and advances Off. Buf will
-// never be reallocated, and attempts to assemble off the end of Buf
-// will panic.
-type Assembler struct {
-	Buf []byte
-	Off int
+// these functions are useful for auto setting up framesizes for call jit
 
-	err error
-}
+func ExitAssembler(asm *Assembler) {
 
-func New(size int) (*Assembler, error) {
-	buf, e := Alloc(size)
-	if e != nil || len(buf) == 0{
-		return nil, e
-	}
+    // framesize of 16 is used since "TEXT ·callJIT(SB), 0, $8-8"
 
-	return &Assembler{Buf: buf}, nil
-}
+	// addq fs, sp
+	fs := byte(8 + 8)
+	asm.byte(0x48)
+	asm.byte(0x83)
+	asm.byte(0xc4)
+	asm.byte(fs)
+	asm.byte(0x48)
 
-func (a *Assembler) Release() {
-	Release(a.Buf)
-}
-
-func (a *Assembler) Error() error {
-	err := a.err
-	a.err = nil
-	return err
+    // ret
+	asm.Ret()
 }
 
 func (a *Assembler) byte(b byte) {

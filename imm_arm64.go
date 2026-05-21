@@ -1,4 +1,4 @@
-package arm64
+package gojit
 
 import (
 	"math/bits"
