@@ -9,15 +9,21 @@ package cache
 //}
 import "C"
 
-import "unsafe"
+import (
+	"runtime"
+	"unsafe"
+)
 
 func ClearICache(code []byte) {
-    if len(code) == 0 {
-        return
-    }
+	if len(code) == 0 {
+		return
+	}
+
+	var pinner runtime.Pinner
+	pinner.Pin(&code[0])
+	defer pinner.Unpin()
 
 	start := unsafe.Pointer(&code[0])
-
 	end := unsafe.Add(start, len(code))
-    C.clearcache(start, end)
+	C.clearcache(start, end)
 }

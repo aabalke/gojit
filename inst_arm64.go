@@ -5,16 +5,15 @@ import (
 )
 
 func (a *Assembler) Cinc(rd, rn Reg, cond Cond, sf bool) {
-
 	if rn == 0x1F {
 		panic("cinc with rn == 0x1F")
 	}
 
-	a.Csinc(rd, rn, rn, cond ^ 1, sf)
+	a.Csinc(rd, rn, rn, cond^1, sf)
 }
 
 func (a *Assembler) Cset(rd Reg, cond Cond, sf bool) {
-	a.Csinc(rd, 0x1F, 0x1F, cond ^ 1, sf)
+	a.Csinc(rd, 0x1F, 0x1F, cond^1, sf)
 }
 
 func (a *Assembler) Csel(rd, rn, rm Reg, cond Cond, sf bool) {
@@ -34,7 +33,6 @@ func (a *Assembler) Csneg(rd, rn, rm Reg, cond Cond, sf bool) {
 }
 
 func (a *Assembler) _condSelect(rd, rn, rm Reg, cond Cond, op, op2, sf bool) {
-
 	v := uint32(0b00011010100) << 21
 
 	if op2 {
@@ -45,9 +43,9 @@ func (a *Assembler) _condSelect(rd, rn, rm Reg, cond Cond, op, op2, sf bool) {
 		v |= 1 << 30
 	}
 
-	v |= uint32(rm)   << 16
+	v |= uint32(rm) << 16
 	v |= uint32(cond) << 12
-	v |= uint32(rn)   << 5
+	v |= uint32(rn) << 5
 	v |= uint32(rd)
 
 	if sf {
@@ -86,8 +84,7 @@ func (a *Assembler) MSub(rd, rm, rn, ra Reg, sf bool) {
 }
 
 func (a *Assembler) _dataProcessSrc3(rd, rm, rn, ra Reg, op uint32, unsigned, sub, sf bool) {
-
-	if op >= 1 << 2 {
+	if op >= 1<<2 {
 		panic("data process src3 with op >= 1 << 2")
 	}
 
@@ -114,7 +111,6 @@ func (a *Assembler) _dataProcessSrc3(rd, rm, rn, ra Reg, op uint32, unsigned, su
 }
 
 func (a *Assembler) Clz(rd, rn Reg, sf bool) {
-
 	v := uint32(0b0101_1010_1100_0000_0001_00) << 10
 	v |= uint32(rn) << 5
 	v |= uint32(rd)
@@ -170,16 +166,15 @@ const (
 )
 
 func (a *Assembler) _LogicalReg(rd, rn, rm Reg, imm, opc, shift uint32, n, sf bool) {
-
 	if shift >= 0b100 {
 		panic("logical reg bad shift")
 	}
 
-	if imm >= 1 << 6 {
+	if imm >= 1<<6 {
 		panic("logical reg imm >= 1 << 6")
 	}
 
-	if opc >= 1 << 2 {
+	if opc >= 1<<2 {
 		panic("logical reg opc >= 1 << 2")
 	}
 
@@ -204,13 +199,14 @@ func (a *Assembler) _LogicalReg(rd, rn, rm Reg, imm, opc, shift uint32, n, sf bo
 	a.addInst(v)
 }
 
-func (a *Assembler) TstImm(rd Reg, imm Immediate, sf bool) {
-	a.AndImm(rd, rd, imm, true, sf)
+func (a *Assembler) TstImm(rn Reg, imm Immediate, sf bool) {
+	a.AndImm(RZR, rn, imm, true, sf)
 }
 
 func (a *Assembler) AndImm(rd, rn Reg, imm Immediate, set, sf bool) {
 	if set {
 		a._LogicalImm(rd, rn, imm, 0b11, sf)
+		return
 	}
 
 	a._LogicalImm(rd, rn, imm, 0b00, sf)
@@ -225,8 +221,7 @@ func (a *Assembler) EorImm(rd, rn Reg, imm Immediate, sf bool) {
 }
 
 func (a *Assembler) _LogicalImm(rd, rn Reg, imm Immediate, op uint32, sf bool) {
-
-	if op >= 1 << 2 {
+	if op >= 1<<2 {
 		panic("logical imm with op >= 1 << 2")
 	}
 
@@ -236,7 +231,7 @@ func (a *Assembler) _LogicalImm(rd, rn Reg, imm Immediate, op uint32, sf bool) {
 		v |= 1 << 31
 	}
 
-	v |= op    << 29
+	v |= op << 29
 	v |= imm.n << 22
 	v |= imm.immr << 16
 	v |= imm.imms << 10
@@ -261,17 +256,17 @@ func (a *Assembler) CmpReg(rn, rm Reg, imm, shift uint32, sh, sf bool) {
 func (a *Assembler) ADDReg(rd, rn, rm Reg, imm, shift uint32, set, sh, sf bool) {
 	a._ADDSUBReg(rd, rn, rm, imm, shift, set, false, sf)
 }
+
 func (a *Assembler) SUBReg(rd, rn, rm Reg, imm, shift uint32, set, sh, sf bool) {
 	a._ADDSUBReg(rd, rn, rm, imm, shift, set, true, sf)
 }
 
 func (a *Assembler) _ADDSUBReg(rd, rn, rm Reg, imm, shift uint32, set, sub, sf bool) {
-
 	if shift > 0b10 {
 		panic("reg add/sub with invalid shift")
 	}
 
-	if !sf && imm >= 1 << 4 {
+	if !sf && imm >= 1<<4 {
 		panic("reg add/sub word with invalid imm")
 	}
 
@@ -309,12 +304,12 @@ func (a *Assembler) CmpImm(rn Reg, imm, shift uint32, sh, sf bool) {
 func (a *Assembler) ADDImm(rd, rn Reg, imm uint32, set, sh, sf bool) {
 	a._ADDSUBImm(rd, rn, imm, false, set, sh, sf)
 }
+
 func (a *Assembler) SUBImm(rd, rn Reg, imm uint32, set, sh, sf bool) {
 	a._ADDSUBImm(rd, rn, imm, true, set, sh, sf)
 }
 
 func (a *Assembler) _ADDSUBImm(rd, rn Reg, imm uint32, sub, set, sh, sf bool) {
-
 	v := uint32(0b100010) << 23
 
 	if sf {
@@ -333,7 +328,7 @@ func (a *Assembler) _ADDSUBImm(rd, rn Reg, imm uint32, sub, set, sh, sf bool) {
 		v |= 1 << 30
 	}
 
-	if imm >= 1 << 12 {
+	if imm >= 1<<12 {
 		panic("add imm >= 1 << 12")
 	}
 
@@ -361,8 +356,7 @@ func (a *Assembler) LdrReg(rt, rn, rm Reg, option, size uint32, scale bool) {
 
 // rt, [rn + imm]
 func (a *Assembler) _ldrStrReg(rt, rn, rm Reg, option, size uint32, ldr, scale bool) {
-
-	if option & 0b10 != 0 || option >= 1<<4 {
+	if option&0b10 != 0 || option >= 1<<4 {
 		panic("ldr/str invalid option value")
 	}
 
@@ -398,7 +392,6 @@ func (a *Assembler) LdrImm(rt, rn Reg, imm, size uint32, pre, unsigned bool) {
 
 // rt, [rn + imm]
 func (a *Assembler) _ldrStrImm(rt, rn Reg, imm, size uint32, ldr, pre, unsigned bool) {
-
 	v := uint32(0b1110) << 26
 
 	v |= size << 30
@@ -406,13 +399,13 @@ func (a *Assembler) _ldrStrImm(rt, rn Reg, imm, size uint32, ldr, pre, unsigned 
 	if unsigned {
 		v |= 1 << 24
 
-		if imm >= 1 << 12 {
+		if imm >= 1<<12 {
 			panic("unsigned ldr/str imm. imm >= 1 << 12")
 		}
 
 		v |= imm << 10
 	} else {
-		if imm >= 1 << 19 {
+		if imm >= 1<<19 {
 			panic("signed ldr/str imm. imm >= 1 << 9")
 		}
 
@@ -459,12 +452,11 @@ func (a *Assembler) Movn(rd Reg, imm, hw uint32, sf bool) {
 }
 
 func (a *Assembler) _mov(rd Reg, imm, opc, hw uint32, sf bool) {
-
 	if !sf && hw > 1 {
 		panic("imm mov word inst with hw > 1")
 	}
 
-	if imm >= 1 << 16 {
+	if imm >= 1<<16 {
 		panic("imm mov imm >= 16")
 	}
 
@@ -476,7 +468,7 @@ func (a *Assembler) _mov(rd Reg, imm, opc, hw uint32, sf bool) {
 
 	v |= uint32(rd)
 	v |= imm << 5
-	v |= hw  << 21
+	v |= hw << 21
 	v |= opc << 29
 
 	a.addInst(v)
@@ -487,19 +479,21 @@ func (a *Assembler) Ret() {
 }
 
 func (a *Assembler) Sxtb(rd, rn Reg, sf bool) {
-
 	i := Immediate{0, 0x7, 0x0, sf}
 
-	if sf { i.n = 1 }
+	if sf {
+		i.n = 1
+	}
 
 	a.Bfm(rd, rn, i, false, sf)
 }
 
 func (a *Assembler) Sxth(rd, rn Reg, sf bool) {
-
 	i := Immediate{0, 0xF, 0x0, sf}
 
-	if sf { i.n = 1 }
+	if sf {
+		i.n = 1
+	}
 
 	a.Bfm(rd, rn, i, false, sf)
 }
@@ -509,7 +503,6 @@ func (a *Assembler) Sxtw(rd, rn Reg) {
 }
 
 func (a *Assembler) AsrImm(rd, rn Reg, shift uint32, sf bool) {
-
 	var width, N, imms uint32
 	if sf {
 		width = 64
@@ -521,15 +514,14 @@ func (a *Assembler) AsrImm(rd, rn Reg, shift uint32, sf bool) {
 		imms = 0x1F
 	}
 
-    if shift >= width {
-        panic("invalid ASR shift")
-    }
+	if shift >= width {
+		panic("invalid ASR shift")
+	}
 
 	a.Bfm(rd, rn, Immediate{N, imms, shift, sf}, false, sf)
 }
 
 func (a *Assembler) LsrImm(rd, rn Reg, shift uint32, sf bool) {
-
 	var width, N uint32
 	if sf {
 		width = 64
@@ -539,17 +531,16 @@ func (a *Assembler) LsrImm(rd, rn Reg, shift uint32, sf bool) {
 		N = 0
 	}
 
-    if shift >= width {
-        panic("invalid LSR shift")
-    }
+	if shift >= width {
+		panic("invalid LSR shift")
+	}
 
-    immr := shift
-    imms := width - 1
+	immr := shift
+	imms := width - 1
 	a.Bfm(rd, rn, Immediate{N, imms, immr, sf}, true, sf)
 }
 
 func (a *Assembler) LslImm(rd, rn Reg, shift uint32, sf bool) {
-
 	var width, N uint32
 	if sf {
 		width = 64
@@ -565,11 +556,10 @@ func (a *Assembler) LslImm(rd, rn Reg, shift uint32, sf bool) {
 }
 
 func (a *Assembler) Bfm(rd, rn Reg, imm Immediate, unsigned, sf bool) {
-
 	v := uint32(0b100110) << 23
-	v |= imm.n      << 22
-	v |= imm.immr   << 16
-	v |= imm.imms   << 10
+	v |= imm.n << 22
+	v |= imm.immr << 16
+	v |= imm.imms << 10
 	v |= uint32(rn) << 5
 	v |= uint32(rd)
 
@@ -585,7 +575,6 @@ func (a *Assembler) Bfm(rd, rn Reg, imm Immediate, unsigned, sf bool) {
 }
 
 func (a *Assembler) Bfi(rd, rn Reg, width, lsb uint32, sf bool) {
-
 	v := uint32(0b001100110) << 23
 
 	size := uint32(32)
@@ -610,7 +599,7 @@ func (a *Assembler) Bfi(rd, rn Reg, width, lsb uint32, sf bool) {
 	}
 
 	immr := (size - lsb) & (size - 1)
-    imms := width - 1
+	imms := width - 1
 
 	v |= (immr & 0x3F) << 16
 	v |= (imms & 0x3F) << 10
@@ -621,7 +610,6 @@ func (a *Assembler) Bfi(rd, rn Reg, width, lsb uint32, sf bool) {
 }
 
 func (a *Assembler) MovReg(rd, rm Reg, sf bool) {
-
 	v := uint32(0b10101) << 25
 	v |= 0x1F << 5
 	v |= uint32(rd)
@@ -634,17 +622,15 @@ func (a *Assembler) MovReg(rd, rm Reg, sf bool) {
 	a.addInst(v)
 }
 
-
 func (a *Assembler) RorImm(rd, rs Reg, shift uint32, sf bool) {
-	if shift >= 1 << 5 {
+	if shift >= 1<<5 {
 		panic("ror imm with shift >= 1 << 5")
 	}
 	a.ExtrReg(rd, rs, rs, shift, sf)
 }
 
 func (a *Assembler) ExtrReg(rd, rn, rm Reg, imm uint32, sf bool) {
-
-	if imm >= 1 << 6 {
+	if imm >= 1<<6 {
 		panic("extr reg imm >= 1 << 6")
 	}
 
@@ -662,8 +648,6 @@ func (a *Assembler) ExtrReg(rd, rn, rm Reg, imm uint32, sf bool) {
 
 	a.addInst(v)
 }
-
-
 
 const (
 	UDIV = 0b000010
@@ -719,7 +703,6 @@ func (a *Assembler) UminReg(rd, rn, rm Reg, sf bool) {
 }
 
 func (a *Assembler) _dataProcessSrc2(rd, rn, rm Reg, op uint32, sf bool) {
-
 	v := uint32(0b1101011) << 22
 	v |= op << 10
 	v |= uint32(rd)
@@ -742,19 +725,18 @@ func (a *Assembler) SbcReg(rd, rn, rm Reg, set, sf bool) {
 }
 
 func (a *Assembler) _ADDSUBCARRY(rd, rn, rm Reg, sub, set, sf bool) {
-
-	v := uint32(0b1101)  << 25
+	v := uint32(0b1101) << 25
 
 	if sf {
-		v |= 1<<31
+		v |= 1 << 31
 	}
 
 	if sub {
-		v |= 1<<30
+		v |= 1 << 30
 	}
 
 	if set {
-		v |= 1<<29
+		v |= 1 << 29
 	}
 
 	v |= uint32(rd)
@@ -764,7 +746,7 @@ func (a *Assembler) _ADDSUBCARRY(rd, rn, rm Reg, sub, set, sf bool) {
 	a.addInst(v)
 }
 
-//// move sys reg => general purpose reg
+// // move sys reg => general purpose reg
 func (a *Assembler) Mrs(rt Reg) {
 	v := uint32(0xd51b4200)
 	v |= 1 << 21
@@ -779,27 +761,24 @@ func (a *Assembler) Msr(rt Reg) {
 	a.addInst(v)
 }
 
-
 func (a *Assembler) B() func() {
-
 	branchOff := a.Off
 	a.addInst(0xDEADBEEF) // temporary, will crash if func not called
 
 	return func() {
 		immBytes := (a.Off - branchOff) >> 2
-		v := uint32(0b101) << 26 | uint32(immBytes)
+		v := uint32(0b101)<<26 | uint32(immBytes)
 		binary.LittleEndian.PutUint32(a.Buf[branchOff:], v)
 	}
 }
 
 func (a *Assembler) BCond(cond Cond) func() {
-
 	branchOff := a.Off
 	a.addInst(0xDEADBEEF) // temporary, will crash if func not called
 
 	return func() {
 		immBytes := ((a.Off - branchOff) >> 2) << 5
-		v := uint32(0b010101) << 26 | uint32(immBytes) | uint32(cond)
+		v := uint32(0b010101)<<26 | uint32(immBytes) | uint32(cond)
 		binary.LittleEndian.PutUint32(a.Buf[branchOff:], v)
 	}
 }

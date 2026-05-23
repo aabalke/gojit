@@ -41,6 +41,10 @@ func (a *Assembler) Mov64(rd Reg, v uint64) {
 	a.Movk(rd, uint32(v>>32) & 0xFFFF, HW_32, true)
 	a.Movk(rd, uint32(v>>48) & 0xFFFF, HW_48, true)
 }
+func (a *Assembler) Mov32(rd Reg, v uint32) {
+	a.Movz(rd, (v>> 0) & 0xFFFF, HW_00, false)
+	a.Movk(rd, (v>>16) & 0xFFFF, HW_16, false)
+}
 
 func (a *Assembler) Exit() {
 	
