@@ -15,9 +15,8 @@ const PageSize = 4096
 func callJIT(code uintptr)
 func callJITImplAddr() uintptr
 
-
 func (a *Assembler) addInst(inst uint32) {
-	if a.Off + 3 > len(a.Buf) {
+	if a.Off+3 > len(a.Buf) {
 		a.err = ErrBufferTooSmall
 		return
 	}
@@ -36,20 +35,20 @@ func getTaggedLabelAddr(tagIdx uint8) uintptr {
 }
 
 func (a *Assembler) Mov64(rd Reg, v uint64) {
-	a.Movz(rd, uint32(v>> 0) & 0xFFFF, HW_00, true)
-	a.Movk(rd, uint32(v>>16) & 0xFFFF, HW_16, true)
-	a.Movk(rd, uint32(v>>32) & 0xFFFF, HW_32, true)
-	a.Movk(rd, uint32(v>>48) & 0xFFFF, HW_48, true)
+	a.Movz(rd, uint32(v>>0)&0xFFFF, HW_00, true)
+	a.Movk(rd, uint32(v>>16)&0xFFFF, HW_16, true)
+	a.Movk(rd, uint32(v>>32)&0xFFFF, HW_32, true)
+	a.Movk(rd, uint32(v>>48)&0xFFFF, HW_48, true)
 }
+
 func (a *Assembler) Mov32(rd Reg, v uint32) {
-	a.Movz(rd, (v>> 0) & 0xFFFF, HW_00, false)
-	a.Movk(rd, (v>>16) & 0xFFFF, HW_16, false)
+	a.Movz(rd, (v>>0)&0xFFFF, HW_00, false)
+	a.Movk(rd, (v>>16)&0xFFFF, HW_16, false)
 }
 
 func (a *Assembler) Exit() {
-	
 	// this amount needs to match the amount in callJIT asm text header
-	a.ADDImm(RSP, RSP, (80 + 16), false, false, true)
+	a.ADDImm(RSP, RSP, (144 + 16), false, false, true)
 	a.Ret()
 
 	if err := a.Error(); err != nil {
