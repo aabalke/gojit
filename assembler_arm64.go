@@ -1,9 +1,7 @@
 package gojit
 
 import (
-	"bytes"
 	"encoding/binary"
-	"unsafe"
 
 	"github.com/aabalke/gojit/cache"
 )
@@ -23,15 +21,6 @@ func (a *Assembler) addInst(inst uint32) {
 
 	binary.LittleEndian.PutUint32(a.Buf[a.Off:], uint32(inst))
 	a.Off += 4
-}
-
-func getTaggedLabelAddr(tagIdx uint8) uintptr {
-	impl := callJITImplAddr()
-	bts := unsafe.Slice((*uint8)(unsafe.Pointer(impl)), 0x100)
-	tagBytes := []uint8{tagIdx, 0xBE, 0xAD, 0xDE}
-	offset := bytes.Index(bts, tagBytes)
-	offset += 4 // past offset
-	return impl + uintptr(offset)
 }
 
 func (a *Assembler) Mov64(rd Reg, v uint64) {

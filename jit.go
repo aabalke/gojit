@@ -4,8 +4,10 @@
 package gojit
 
 import (
+	"bytes"
 	"errors"
 	"unsafe"
+
 	"github.com/edsrzf/mmap-go"
 )
 
@@ -27,11 +29,11 @@ func Release(b []byte) error {
 
 // Addr returns the address in memory of a byte slice, as a uintptr
 func Addr(b []byte) uintptr {
-    return uintptr(unsafe.Pointer(unsafe.SliceData(b)))
+	return uintptr(unsafe.Pointer(unsafe.SliceData(b)))
 }
 
 func CallJit(b uintptr) {
-    callJIT(b)
+	callJIT(b)
 }
 
 var ErrBufferTooSmall = errors.New("buffer is too small")
@@ -49,7 +51,7 @@ type Assembler struct {
 
 func New(size int) (*Assembler, error) {
 	buf, e := Alloc(size)
-	if e != nil || len(buf) == 0{
+	if e != nil || len(buf) == 0 {
 		return nil, e
 	}
 
@@ -64,4 +66,13 @@ func (a *Assembler) Error() error {
 	err := a.err
 	a.err = nil
 	return err
+}
+
+func getTaggedLabelAddr(tagIdx uint8) uintptr {
+	impl := callJITImplAddr()
+	bts := unsafe.Slice((*uint8)(unsafe.Pointer(impl)), 0x100)
+	tagBytes := []uint8{tagIdx, 0xBE, 0xAD, 0xDE}
+	offset := bytes.Index(bts, tagBytes)
+	offset += 4 // past offset
+	return impl + uintptr(offset)
 }
