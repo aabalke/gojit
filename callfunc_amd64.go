@@ -12,33 +12,26 @@ import (
 var callPtr = uint64(getTaggedLabelAddr(0x0))
 
 func (a *Assembler) InternalCallFunc(f any) {
-	// uses R10, R11 to give max cnt arg / result registers
-	// see abi internal for amd64 registers
-	// max available is 7 args, 8 returns
+	const offset = byte(4 + 3 + 10 + 10) // mov, movabs, movabs, jmp
 
-	ptr := funcAddr(f)
-
-	a.MovAbs(uint64(callPtr), R11)
-
-	offset := byte(4 + 3 + 10) // mov, movabs, jmp
-
-	// lea r10, [rip+offset]
-	a.byte(0x4C)
+	// lea r13, [rip+offset]
+	a.byte(0x4D)
 	a.byte(0x8D)
-	a.byte(0x15)
+	a.byte(0x2D)
 	a.byte(offset)
 	a.byte(0)
 	a.byte(0)
 	a.byte(0)
 
-	a.Mov(R10, Indirect{Rsp, 0, 64})
+	a.Mov(R13, Indirect{Rsp, 0, 64})
 
-	a.MovAbs(uint64(ptr), R10)
+	a.MovAbs(uint64(funcAddr(f)), R12)
+	a.MovAbs(uint64(callPtr), R13)
 
-	// jmp r11
+	// jmp r13
 	a.byte(0x41)
 	a.byte(0xff)
-	a.byte(0xe3)
+	a.byte(0xe5)
 }
 
 func funcAddr(f any) uintptr {

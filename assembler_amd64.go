@@ -10,11 +10,11 @@ func callJITImplAddr() uintptr
 
 // these functions are useful for auto setting up framesizes for call jit
 
-func ExitAssembler(asm *Assembler) {
-	// framesize of 16 is used since "TEXT ·callJIT(SB), 0, $8-8"
+func (asm *Assembler) Exit() {
+	// framesize must match "TEXT callJIT(SB), 0, $_-_"
 
 	// addq fs, sp
-	fs := byte(32 + 8)
+	fs := byte(48 + 8)
 	asm.byte(0x48)
 	asm.byte(0x83)
 	asm.byte(0xc4)
