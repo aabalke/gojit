@@ -9,7 +9,7 @@ aabalke/gojit is a revival of nelhage/gojit and rasky/gojit, providing jit compi
 
 # Requirements
 
-This jit compiler requires an x86/amd64 system, and go version 1.17+.
+This jit compiler requires an amd64/arm64 system, and go version 1.17+.
 For handling in golang version 1.16 and earlier please [read](https://www.quasilyte.dev/blog/post/call-go-from-jit/).
 
 If a Go function is called from jit code, the Go functions must have a nosplit directive.
