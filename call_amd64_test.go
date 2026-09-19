@@ -30,7 +30,7 @@ func TestCall(t *testing.T) {
 		panic(err)
 	}
 
-	asm.InternalCallFunc(func() {
+	asm.CallFunc(func() {
 		called = true
 	})
 
@@ -58,7 +58,7 @@ func TestCallRecursion(t *testing.T) {
 		panic(err)
 	}
 
-	asm.InternalCallFunc(recursive)
+	asm.CallFunc(recursive)
 
 	testExit(asm)
 }
@@ -71,7 +71,7 @@ func TestCallGc(t *testing.T) {
 		panic(err)
 	}
 
-	asm.InternalCallFunc(func() {
+	asm.CallFunc(func() {
 		runtime.GC()
 	})
 
@@ -88,7 +88,7 @@ func TestIndirect(t *testing.T) {
 		panic(err)
 	}
 
-	asm.InternalCallFunc(func() {
+	asm.CallFunc(func() {
 		v = 0xBEEF
 	})
 
@@ -96,7 +96,7 @@ func TestIndirect(t *testing.T) {
 	asm.MovAbs(uint64(uintptr(unsafe.Pointer(&v))), Rbx)
 	asm.Mov(Rax, Indirect{Rbx, 0, 64})
 
-	asm.InternalCallFunc(func() {
+	asm.CallFunc(func() {
 		v = 0xABBA
 	})
 
@@ -125,7 +125,7 @@ func TestCallArguments(t *testing.T) {
 	asm.Mov(Imm(1), R8)
 	asm.Mov(Imm(1), R9)
 
-	asm.InternalCallFunc(func(a, b, c, d, e, f, g uint64) uint64 {
+	asm.CallFunc(func(a, b, c, d, e, f, g uint64) uint64 {
 		return a + b + c + d + e + f + g
 	})
 
@@ -147,7 +147,7 @@ func TestCallResults(t *testing.T) {
 		panic(err)
 	}
 
-	asm.InternalCallFunc(func() (uint64, uint64, uint64, uint64) {
+	asm.CallFunc(func() (uint64, uint64, uint64, uint64) {
 		return 1, 2, 3, 4
 	})
 
@@ -188,7 +188,7 @@ func TestCallResults(t *testing.T) {
 //    }
 //
 //    for range 1024 {
-//        asm.InternalCallFunc(f)
+//        asm.CallFunc(f)
 //    }
 //
 //    testExit(asm)
@@ -231,7 +231,7 @@ func (m *Mem) Read8(addr uint32, arm9 bool) uint32 {
 
 func CallFunc(asm *Assembler, f any) {
 	asm.MovAbs(uint64(uintptr(unsafe.Pointer(CpuPointer))), CPU)
-	asm.InternalCallFunc(f)
+	asm.CallFunc(f)
 	asm.MovAbs(uint64(uintptr(unsafe.Pointer(CpuPointer))), CPU)
 }
 
@@ -288,7 +288,7 @@ func TestSavedRegisters(t *testing.T) {
 	asm.MovAbs(uint64(uintptr(unsafe.Pointer(&te))), Rax)
 	asm.Mov(Indirect{Rax, 0, 64}, R11)
 
-	asm.InternalCallFunc(func() (
+	asm.CallFunc(func() (
 		uint64, uint64, uint64, uint64,
 		uint64, uint64, uint64, uint64,
 	) {

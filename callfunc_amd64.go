@@ -6,12 +6,13 @@ import (
 
 // to understand this page read here: https://aaronbalke.com/posts/calling-go-functions-from-jit-code/
 
-// r10, and r11 are used for pointers in conversion to abi0.
-// do not use these registers for arguments or returns (use stack instead)
+// arg and result available rax, rbx, rcx, rdi
+// saved over call r8, r9, r10, r11, rsi
+// clobbers r12, r13
 
 var callPtr = uint64(getTaggedLabelAddr(0x0))
 
-func (a *Assembler) InternalCallFunc(f any) {
+func (a *Assembler) CallFunc(f any) {
 	const offset = byte(4 + 3 + 10 + 10) // mov, movabs, movabs, jmp
 
 	// lea r13, [rip+offset]
