@@ -1,18 +1,29 @@
 #include "funcdata.h"
 #include "textflag.h"
 
-TEXT ·callJIT(SB), 0, $48-8
+
+TEXT ·CallJit(SB), 0, $48-8
     NO_LOCAL_POINTERS
+    // assembler adds
+    // add stack: return PC 
+    // add stack: RBP on entry (PUSHQ BP)
+    // locals 
+    // call includes PUSHQ BP, MOVQ SP, BP, SUBQ (framesize), SP
+    // (framesize = locals + args)
+
     MOVQ code+0(FP), AX
     JMP AX
-gocall:
-    LONG $0xDEADBE00
+
+call:
+    LONG $0x636E7566 // func
 
     MOVQ R8,  8(SP) 
     MOVQ R9,  16(SP)
     MOVQ R10, 24(SP)
     MOVQ R11, 32(SP)
     MOVQ SI,  40(SP)
+
+    PCALIGN $8
 
     CALL R12
 
@@ -23,8 +34,15 @@ gocall:
     MOVQ 40(SP), SI
     JMP (SP)
 
-TEXT ·callJITImplAddr(SB), 0, $0-8
+exit:
+    LONG $0x74697865 // exit
+    // assembler adds
+    //ADDQ framesize, SP
+    //POPQ BP
+    RET
+
+TEXT ·GetCallJitPtr(SB), 0, $0-8
     NO_LOCAL_POINTERS
-    MOVQ $·callJIT(SB), AX  // address of ABI0 impl, not trampoline
+    MOVQ $·CallJit(SB), AX  // address of ABI0 impl, not trampoline
     MOVQ AX, ret+0(FP)
     RET

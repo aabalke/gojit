@@ -84,7 +84,7 @@ var (
 	InstBsr = &Instruction{"bsr", nil, ImmRm{}, ImmRm{}, nil, j{0x0F, 0xBD}, 64}
 	InstBsf = &Instruction{"bsf", nil, ImmRm{}, ImmRm{}, nil, j{0x0F, 0xBC}, 64}
 
-    InstLzcnt = &Instruction{"lzcnt", nil, ImmRm{}, ImmRm{}, nil, j{0xF3, 0x0F, 0xBD}, 64}
+	InstLzcnt = &Instruction{"lzcnt", nil, ImmRm{}, ImmRm{}, nil, j{0xF3, 0x0F, 0xBD}, 64}
 )
 
 func (a *Assembler) Inc(o Operand) {
@@ -147,46 +147,18 @@ func (a *Assembler) Notb(o Operand) {
 	o.ModRM(a, Register{2, 0})
 }
 
-func (a *Assembler) ShlCl(o Operand) {
-	o.Rex(a, Register{})
-	a.byte(0xd3)
-	o.ModRM(a, Register{4, 0})
-}
+func (a *Assembler) RolCl(o Operand) { a.shiftCl(0, o) }
+func (a *Assembler) RorCl(o Operand) { a.shiftCl(1, o) }
+func (a *Assembler) RclCl(o Operand) { a.shiftCl(2, o) }
+func (a *Assembler) RcrCl(o Operand) { a.shiftCl(3, o) }
+func (a *Assembler) ShlCl(o Operand) { a.shiftCl(4, o) }
+func (a *Assembler) ShrCl(o Operand) { a.shiftCl(5, o) }
+func (a *Assembler) SarCl(o Operand) { a.shiftCl(7, o) }
 
-func (a *Assembler) ShrCl(o Operand) {
+func (a *Assembler) shiftCl(id uint8, o Operand) {
 	o.Rex(a, Register{})
 	a.byte(0xd3)
-	o.ModRM(a, Register{5, 0})
-}
-
-func (a *Assembler) SarCl(o Operand) {
-	o.Rex(a, Register{})
-	a.byte(0xd3)
-	o.ModRM(a, Register{7, 0})
-}
-
-func (a *Assembler) RolCl(o Operand) {
-	o.Rex(a, Register{})
-	a.byte(0xd3)
-	o.ModRM(a, Register{0, 0})
-}
-
-func (a *Assembler) RorCl(o Operand) {
-	o.Rex(a, Register{})
-	a.byte(0xd3)
-	o.ModRM(a, Register{1, 0})
-}
-
-func (a *Assembler) RclCl(o Operand) {
-	o.Rex(a, Register{})
-	a.byte(0xd3)
-	o.ModRM(a, Register{2, 0})
-}
-
-func (a *Assembler) RcrCl(o Operand) {
-	o.Rex(a, Register{})
-	a.byte(0xd3)
-	o.ModRM(a, Register{3, 0})
+	o.ModRM(a, Register{id, 0})
 }
 
 func (asm *Assembler) arithmeticImmReg(insn *Instruction, src Imm, dst Register, imm_rm ImmRm) {
@@ -378,10 +350,10 @@ func (a *Assembler) JccShort(cc byte, off int8) {
 
 // Like JccShort, but the offset is calculated with a closure function
 // Use like this:
-//     closejcc := a.JccShortDelayed(CC_EQ)
-//     // [emit code]
-//     closejcc()  // jump here
 //
+//	closejcc := a.JccShortDelayed(CC_EQ)
+//	// [emit code]
+//	closejcc()  // jump here
 func (a *Assembler) JccShortForward(cc byte) func() {
 	a.byte(0x70 | cc)
 	off := a.Off
@@ -403,7 +375,7 @@ func (a *Assembler) JmpForward() func() {
 
 func (a *Assembler) Jmp(src Operand) {
 	if _, ok := src.(Imm); ok {
-        panic("unsetup jmp imm")
+		panic("unsetup jmp imm")
 		//a.byte(0x68)
 		//a.int32(uint32(imm.Val))
 	} else {
@@ -428,7 +400,7 @@ func (a *Assembler) fwdOffset() func() {
 		}
 		end := a.Off
 		i := end - base
-		a.Buf[off]   = byte(i)
+		a.Buf[off] = byte(i)
 		a.Buf[off+1] = byte(i >> 8)
 		a.Buf[off+2] = byte(i >> 16)
 		a.Buf[off+3] = byte(i >> 24)
@@ -535,4 +507,3 @@ func (asm *Assembler) movsx(src, dst Operand, isSXD bool) {
 		src.ModRM(asm, dr)
 	}
 }
-

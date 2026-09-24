@@ -10,7 +10,10 @@ import (
 // saved over call r8, r9, r10, r11, rsi
 // clobbers r12, r13
 
-var callPtr = uint64(getTaggedLabelAddr(0x0))
+var (
+	callPtr = getTaggedLabelAddr("func")
+	exitPtr = getTaggedLabelAddr("exit")
+)
 
 func (a *Assembler) CallFunc(f any) {
 	const offset = byte(4 + 3 + 10 + 10) // mov, movabs, movabs, jmp
@@ -26,7 +29,7 @@ func (a *Assembler) CallFunc(f any) {
 
 	a.Mov(R13, Indirect{Rsp, 0, 64})
 
-	a.MovAbs(uint64(funcAddr(f)), R12)
+	a.MovAbs(uint64(getFuncPtr(f)), R12)
 	a.MovAbs(uint64(callPtr), R13)
 
 	// jmp r13
@@ -35,7 +38,7 @@ func (a *Assembler) CallFunc(f any) {
 	a.byte(0xe5)
 }
 
-func funcAddr(f any) uintptr {
+func getFuncPtr(f any) uintptr {
 	v := reflect.ValueOf(f)
 	if v.Kind() != reflect.Func {
 		panic("funcAddr: not a func")

@@ -5,24 +5,16 @@ package gojit
 const PageSize = 4096
 
 // asm stubs
-func callJIT(code uintptr)
-func callJITImplAddr() uintptr
+func CallJit(code uintptr)
+func GetCallJitPtr() uintptr
 
-// these functions are useful for auto setting up framesizes for call jit
+func (a *Assembler) Exit() {
+	a.MovAbs(uint64(exitPtr), R13)
 
-func (asm *Assembler) Exit() {
-	// framesize must match "TEXT callJIT(SB), 0, $_-_"
-
-	// addq fs, sp
-	fs := byte(48 + 8)
-	asm.byte(0x48)
-	asm.byte(0x83)
-	asm.byte(0xc4)
-	asm.byte(fs)
-	asm.byte(0x48)
-
-	// ret
-	asm.Ret()
+	// jmp r13
+	a.byte(0x41)
+	a.byte(0xff)
+	a.byte(0xe5)
 }
 
 func (a *Assembler) byte(b byte) {
@@ -45,7 +37,7 @@ func (a *Assembler) int16(i uint16) {
 		a.err = ErrBufferTooSmall
 		return
 	}
-	a.Buf[a.Off] = byte(i & 0xFF)
+	a.Buf[a.Off+0] = byte(i >> 0)
 	a.Buf[a.Off+1] = byte(i >> 8)
 	a.Off += 2
 }
@@ -55,7 +47,7 @@ func (a *Assembler) int32(i uint32) {
 		a.err = ErrBufferTooSmall
 		return
 	}
-	a.Buf[a.Off] = byte(i & 0xFF)
+	a.Buf[a.Off+0] = byte(i >> 0)
 	a.Buf[a.Off+1] = byte(i >> 8)
 	a.Buf[a.Off+2] = byte(i >> 16)
 	a.Buf[a.Off+3] = byte(i >> 24)
@@ -67,7 +59,7 @@ func (a *Assembler) int64(i uint64) {
 		a.err = ErrBufferTooSmall
 		return
 	}
-	a.Buf[a.Off] = byte(i & 0xFF)
+	a.Buf[a.Off+0] = byte(i >> 0)
 	a.Buf[a.Off+1] = byte(i >> 8)
 	a.Buf[a.Off+2] = byte(i >> 16)
 	a.Buf[a.Off+3] = byte(i >> 24)

@@ -61,34 +61,20 @@ const (
 )
 
 type Operand interface {
-	// isOperand is unexported prevents external packages from
-	// implementing Operand.
-	isOperand()
-
 	Rex(asm *Assembler, reg Register)
 	ModRM(asm *Assembler, reg Register)
 }
 
 type Imm int32
 
-func U32(u uint32) int32 {
-	return int32(u)
-}
-
-func (i Imm) isOperand() {}
-func (i Imm) Rex(asm *Assembler, reg Register) {
-	panic("Imm.Rex")
-}
-func (i Imm) ModRM(asm *Assembler, reg Register) {
-	panic("Imm.ModRM")
-}
+func (i Imm) Rex(asm *Assembler, reg Register)   { panic("Imm.Rex") }
+func (i Imm) ModRM(asm *Assembler, reg Register) { panic("Imm.ModRM") }
 
 type Register struct {
 	Val  byte
 	Bits byte
 }
 
-func (r Register) isOperand() {}
 func (i Register) Rex(asm *Assembler, reg Register) {
 	asm.rexBits(i.Bits, reg.Bits, reg.Val > 7, false, i.Val > 7)
 }
@@ -102,42 +88,79 @@ var (
 	Ax  = Register{0, 16}
 	Eax = Register{0, 32}
 	Rax = Register{0, 64}
+
 	Cl  = Register{1, 8}
 	Cx  = Register{1, 16}
 	Ecx = Register{1, 32}
 	Rcx = Register{1, 64}
+
 	Dl  = Register{2, 8}
 	Dx  = Register{2, 16}
 	Edx = Register{2, 32}
 	Rdx = Register{2, 64}
+
 	Bl  = Register{3, 8}
 	Bx  = Register{3, 16}
 	Ebx = Register{3, 32}
 	Rbx = Register{3, 64}
+
+	Spl = Register{4, 8}
+	Sp  = Register{4, 16}
 	Esp = Register{4, 32}
 	Rsp = Register{4, 64}
+
+	Bpl = Register{5, 8}
+	Bp  = Register{5, 16}
 	Ebp = Register{5, 32}
 	Rbp = Register{5, 64}
+
+	Sil = Register{6, 8}
+	Si  = Register{6, 16}
 	Esi = Register{6, 32}
 	Rsi = Register{6, 64}
-    Di  = Register{7, 8}
+
+	Dil = Register{7, 8}
+	Di  = Register{7, 16}
 	Edi = Register{7, 32}
 	Rdi = Register{7, 64}
 
-	R8d  = Register{8, 32}
-	R8   = Register{8, 64}
-	R9d  = Register{9, 32}
-	R9   = Register{9, 64}
+	R8b = Register{8, 8}
+	R8w = Register{8, 16}
+	R8d = Register{8, 32}
+	R8  = Register{8, 64}
+
+	R9b = Register{9, 8}
+	R9w = Register{9, 16}
+	R9d = Register{9, 32}
+	R9  = Register{9, 64}
+
+	R10b = Register{10, 8}
+	R10w = Register{10, 16}
 	R10d = Register{10, 32}
 	R10  = Register{10, 64}
+
+	R11b = Register{11, 8}
+	R11w = Register{11, 16}
 	R11d = Register{11, 32}
 	R11  = Register{11, 64}
+
+	R12b = Register{12, 8}
+	R12w = Register{12, 16}
 	R12d = Register{12, 32}
 	R12  = Register{12, 64}
+
+	R13b = Register{13, 8}
+	R13w = Register{13, 16}
 	R13d = Register{13, 32}
 	R13  = Register{13, 64}
+
+	R14b = Register{14, 8}
+	R14w = Register{14, 16}
 	R14d = Register{14, 32}
 	R14  = Register{14, 64}
+
+	R15b = Register{15, 8}
+	R15w = Register{15, 16}
 	R15d = Register{15, 32}
 	R15  = Register{15, 64}
 )
@@ -152,7 +175,6 @@ func (i Indirect) short() bool {
 	return int32(int8(i.Offset)) == i.Offset
 }
 
-func (i Indirect) isOperand() {}
 func (i Indirect) Rex(asm *Assembler, reg Register) {
 	asm.rexBits(reg.Bits, i.Bits, reg.Val > 7, false, i.Base.Val > 7)
 }
@@ -177,10 +199,10 @@ type PCRel struct {
 	Addr uintptr
 }
 
-func (i PCRel) isOperand() {}
 func (i PCRel) Rex(asm *Assembler, reg Register) {
 	asm.rex(reg.Bits == 64, reg.Val > 7, false, false)
 }
+
 func (i PCRel) ModRM(asm *Assembler, reg Register) {
 	asm.modrm(MOD_INDIR, reg.Val&7, REG_DISP32)
 	asm.rel32(i.Addr)
@@ -203,7 +225,6 @@ type SIB struct {
 	Scale       Scale
 }
 
-func (s SIB) isOperand() {}
 func (s SIB) Rex(asm *Assembler, reg Register) {
 	asm.rex(reg.Bits == 64, reg.Val > 7, s.Index.Val > 7, s.Base.Val > 7)
 }
